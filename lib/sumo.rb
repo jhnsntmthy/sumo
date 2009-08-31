@@ -187,6 +187,9 @@ class Sumo
 	end
 
 	def ec2
-		@ec2 ||= AWS::EC2::Base.new(:access_key_id => config['access_id'], :secret_access_key => config['access_secret'])
+		@ec2 ||= AWS::EC2::Base.new(
+			:access_key_id => config['access_id'],
+			:secret_access_key => config['access_secret']
+		)
 	end
 end
