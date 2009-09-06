@@ -9,7 +9,12 @@ rescue LoadError
 end
 
 class CLI < Thor
-	desc "launch [<role>]", "launch an instance as role, or omit to ssh to vanilla instance"
+     map "-L" => :launch
+     map "-l" => :list
+     map "-t" => :terminate
+     map "-ta" => :terminate_all
+
+    desc "launch [<role>]", "launch an instance as role, or omit to ssh to vanilla instance"
 	def launch(role=nil)
 		id = task("Launch instance") { sumo.launch }
 		host = task("Acquire hostname") { sumo.wait_for_hostname(id) }
