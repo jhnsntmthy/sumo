@@ -1,4 +1,9 @@
-require 'AWS'
+begin
+    require 'AWS'
+rescue LoadError
+    puts "You must have the amazon-ec2 gem installed to run sumo"
+end
+
 require 'yaml'
 require 'socket'
 

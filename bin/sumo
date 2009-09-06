@@ -2,7 +2,11 @@
 
 require File.dirname(__FILE__) + '/../lib/sumo'
 
-require 'thor'
+begin
+    require 'thor'
+rescue LoadError
+    puts "You must have the thor gem installed to run sumo"
+end
 
 class CLI < Thor
 	desc "launch [<role>]", "launch an instance as role, or omit to ssh to vanilla instance"
