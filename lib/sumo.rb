@@ -15,7 +15,7 @@ class Sumo
 		result = ec2.run_instances(
 			:image_id => ami,
 			:instance_type => config['instance_size'] || 'm1.small',
-			:key_name => 'sumo',
+			:key_name => key_name,
 			:group_id => [ 'sumo' ],
 			:availability_zone => config['availability_zone']
 		)
@@ -235,13 +235,24 @@ class Sumo
 	rescue Errno::ENOENT
 		raise "Sumo is not configured, please fill in ~/.sumo/config.yml"
 	end
+	
+	def current_region
+	  @current_region ||= begin
+  	  zones = ec2.describe_availability_zones
+  	  zones.availabilityZoneInfo.item[0].regionName
+	  end
+  end
 
 	def keypair_file
-		"#{sumo_dir}/keypair.pem"
+	  "#{sumo_dir}/keypair-#{current_region}.pem"
 	end
 
+  def key_name
+    "sumo-#{current_region}"
+  end
+
 	def create_keypair
-		keypair = ec2.create_keypair(:key_name => "sumo").keyMaterial
+		keypair = ec2.create_keypair(:key_name => key_name).keyMaterial
 		File.open(keypair_file, 'w') { |f| f.write keypair }
 		File.chmod 0600, keypair_file
 	end
