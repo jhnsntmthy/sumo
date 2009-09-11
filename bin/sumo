@@ -105,7 +105,7 @@ class CLI < Thor
 		end
 	end
 
-	desc "create_volume [<megabytes>]", "create a volume"
+	desc "create_volume [<gigabytes>]", "create a volume"
 	def create_volume(size=5)
 		task("Create #{size}GB volume") { sumo.create_volume(size) }
 	end
