@@ -1,21 +1,11 @@
 require File.dirname(__FILE__) + '/../lib/sumo'
 
-require 'bacon'
-require 'mocha/standalone'
-require 'mocha/object'
+require 'mocha'
+require 'micronaut'
 
-class Bacon::Context
-	include Mocha::API
-
-	def initialize(name, &block)
-		@name = name
-		@before, @after = [
-			[lambda { mocha_setup }],
-			[lambda { mocha_verify ; mocha_teardown }]
-		]
-		@block = block
-	end
-
-	def xit(desc, &bk)
-	end
+Micronaut.configure do |config|
+  config.mock_with :mocha
+  config.color_enabled = true
+  config.alias_example_to :fit, :focused => true
+  config.filter_run :options => { :focused => true }
 end

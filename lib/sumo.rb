@@ -6,6 +6,7 @@ end
 
 require 'yaml'
 require 'socket'
+require 'logger'
 
 class Sumo
 	def launch
@@ -180,7 +181,8 @@ class Sumo
 			'apt-get autoremove -y',
 			"apt-get install -y ruby ruby1.8-dev libopenssl-ruby1.8 rdoc build-essential wget git-core",
 			"wget -P/tmp #{rubygems_url}",
-			"tar xzf /tmp/#{rubygems}.tgz",
+			"cd /tmp",
+			"tar xzf #{rubygems}.tgz -v",
 			"cd /tmp/#{rubygems}",
 			"/usr/bin/env ruby setup.rb",
 			"ln -sfv /usr/bin/gem1.8 /usr/bin/gem",
@@ -223,7 +225,6 @@ class Sumo
 		IO.popen("ssh #{private_options} -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
 		# TODO port private ssh options to ssh_command method then refactor.
 		#IO.popen("#{ssh_command(hostname)} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
-			pipe.puts cmds.join(' && ')
 		end
 
 		unless $?.success?
@@ -236,10 +237,15 @@ class Sumo
 		IO.popen("scp -i #{keypair_file} #{keypair_file} #{config['user']}@#{hostname}:~/.ssh")
 	end
 
-	def prep_ssh_commands(cmds)
+	def prepare_commands(cmds)
 	  joined_commands = cmds.join(' && ')
-	  File.open("~/.sumo/ssh.log", "+w") { |log| log << "Executing ssh commands:\n#{joined_commands}" }
+	  ssh_log.debug { "Executing ssh commands: "}
+	  ssh_log.debug { joined_commands }
 	  joined_commands
+  end
+  
+  def ssh_log
+    @ssh_log ||= Logger.new("#{sumo_dir}/ssh.log")
   end
 
 	def resources(hostname)
