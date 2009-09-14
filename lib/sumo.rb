@@ -179,10 +179,9 @@ class Sumo
 			'apt-get update',
 			'apt-get autoremove -y',
 			"apt-get install -y ruby ruby1.8-dev libopenssl-ruby1.8 rdoc build-essential wget git-core",
-			"curl --silent -L -O #{rubygems_url}",
-			"cd /tmp",
-			"tar xzf #{rubygems}.tgz -v",
-			"cd #{rubygems}",
+			"wget -P/tmp #{rubygems_url}",
+			"tar xzf /tmp/#{rubygems}.tgz",
+			"cd /tmp/#{rubygems}",
 			"/usr/bin/env ruby setup.rb",
 			"ln -sfv /usr/bin/gem1.8 /usr/bin/gem",
 			'gem sources -a http://gems.opscode.com',
@@ -217,7 +216,7 @@ class Sumo
 		]
 		ssh(hostname, commands)
 	end
-
+	
 	def ssh(hostname, cmds)
 		copy_key(hostname)
 	        private_options = "-A" if config['private_chef_repo']
@@ -236,6 +235,12 @@ class Sumo
 	def copy_key(hostname)
 		IO.popen("scp -i #{keypair_file} #{keypair_file} #{config['user']}@#{hostname}:~/.ssh")
 	end
+
+	def prep_ssh_commands(cmds)
+	  joined_commands = cmds.join(' && ')
+	  File.open("~/.sumo/ssh.log", "+w") { |log| log << "Executing ssh commands:\n#{joined_commands}" }
+	  joined_commands
+  end
 
 	def resources(hostname)
 		@resources ||= {}
