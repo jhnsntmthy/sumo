@@ -164,16 +164,17 @@ class Sumo
 	  rubygems = "rubygems-1.3.5"
 	  rubygems_url = "http://files.rubyforge.vm.bytemark.co.uk/rubygems/#{rubygems}.tgz"
 		commands = [
-			'apt-get update',
-			'apt-get autoremove -y',
-			'apt-get install -y ruby ruby-dev git-core',
+			"apt-get update",
+			"apt-get autoremove -y",
+			"apt-get install -y ruby ruby1.8-dev libopenssl-ruby1.8 rdoc build-essential wget",
 			"wget -P/tmp #{rubygems_url}",
 			"cd /tmp",
 			"tar xzf #{rubygems}.tgz -v",
 			"cd #{rubygems}",
 			"/usr/bin/env ruby setup.rb",
-			'gem sources -a http://gems.opscode.com',
-			'gem install chef ohai --no-rdoc --no-ri',
+			"ln -sfv /usr/bin/gem1.8 /usr/bin/gem",
+			"gem sources -a http://gems.opscode.com",
+			"gem install chef ohai --no-rdoc --no-ri",
 			"git clone #{config['cookbooks_url']}",
 		]
 		ssh(hostname, commands)
