@@ -160,10 +160,15 @@ class Sumo
 	end
 
 	def bootstrap_chef(hostname)
+	  rubygems = "rubygems-1.3.5"
+	  rubygems_url = "http://files.rubyforge.vm.bytemark.co.uk/rubygems/#{rubygems}.tgz"
 		commands = [
 			'apt-get update',
 			'apt-get autoremove -y',
-			'apt-get install -y ruby ruby-dev rubygems git-core',
+			'apt-get install -y ruby ruby-dev git-core',
+			"curl --silent -L -O #{rubygems_url}",
+			"cd #{rubygems}",
+			"ruby setup.rb",
 			'gem sources -a http://gems.opscode.com',
 			'gem install chef ohai --no-rdoc --no-ri',
 			"git clone #{config['cookbooks_url']}",
