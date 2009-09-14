@@ -60,7 +60,7 @@ class CLI < Thor
 		display_resources(inst[:hostname])
 	end
 
-	desc "bootstrap", "bootstrap chef and cookbooks"
+	desc "bootstrap [<instance_id or hostname]", "bootstrap specified instance or first available with chef and cookbooks"
 	def bootstrap(id=nil)
 		inst = sumo.find(id) || sumo.running.first || abort("No running instances")
 		task("Bootstrap platform") { sumo.sync_files(inst[:hostname]) }
