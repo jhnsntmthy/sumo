@@ -177,8 +177,8 @@ class Sumo
 	  rubygems = "rubygems-1.3.5"
 	  rubygems_url = "http://files.rubyforge.vm.bytemark.co.uk/rubygems/#{rubygems}.tgz"
 		commands = [
-			'apt-get update',
-			'apt-get autoremove -y',
+			"apt-get update",
+			"apt-get autoremove -y",
 			"apt-get install -y ruby ruby1.8-dev libopenssl-ruby1.8 rdoc build-essential wget git-core",
 			"wget -P/tmp #{rubygems_url}",
 			"cd /tmp",
@@ -186,7 +186,7 @@ class Sumo
 			"cd /tmp/#{rubygems}",
 			"/usr/bin/env ruby setup.rb",
 			"ln -sfv /usr/bin/gem1.8 /usr/bin/gem",
-			'gem sources -a http://gems.opscode.com',
+			"gem sources -a http://gems.opscode.com",
 			'gem install chef ohai rake --no-rdoc --no-ri',
       # Install thor, then execute:
       # thor install http://fqdn/sumo/bootstrap.thor
