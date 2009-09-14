@@ -189,6 +189,7 @@ class Sumo
 			"gem sources -a http://gems.opscode.com",
 			'gem install chef ohai rake --no-rdoc --no-ri',
       # Install thor, then execute:
+			"cd ~",
       # thor install http://fqdn/sumo/bootstrap.thor
 			"rm -rf #{cookbooks_path}",
 			"cd ~",
