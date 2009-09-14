@@ -14,9 +14,10 @@ end
 
 Jeweler::RubyforgeTasks.new
 
-desc 'Run specs'
-task :spec do
-	sh 'bacon -s spec/*_spec.rb'
+require 'micronaut/rake_task'
+Micronaut::RakeTask.new(:spec) do |examples|
+  examples.pattern = 'spec/**/*_spec.rb'
+  examples.ruby_opts << '-Ilib -Ispec'
 end
 
 task :default => :spec
