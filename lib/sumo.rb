@@ -1,6 +1,7 @@
 require 'AWS'
 require 'yaml'
 require 'socket'
+require 'logger'
 
 class Sumo
 	def launch
@@ -167,9 +168,10 @@ class Sumo
 			'apt-get autoremove -y',
 			'apt-get install -y ruby ruby-dev git-core',
 			"wget -P/tmp #{rubygems_url}",
-			"tar xzf /tmp/#{rubygems}.tgz",
-			"cd /tmp/#{rubygems}",
-			"ruby setup.rb",
+			"cd /tmp",
+			"tar xzf #{rubygems}.tgz -v",
+			"cd #{rubygems}",
+			"/usr/bin/env ruby setup.rb",
 			'gem sources -a http://gems.opscode.com',
 			'gem install chef ohai --no-rdoc --no-ri',
 			"git clone #{config['cookbooks_url']}",
@@ -187,17 +189,22 @@ class Sumo
 	
 	def ssh(hostname, cmds)
 		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
-			pipe.puts cmds.join(' && ')
+			pipe.puts prepare_commands(cmds)
 		end
 		unless $?.success?
 			abort "failed\nCheck ~/.sumo/ssh.log for the output"
 		end
 	end
 
-	def prep_ssh_commands(cmds)
+	def prepare_commands(cmds)
 	  joined_commands = cmds.join(' && ')
-	  File.open("~/.sumo/ssh.log", "+w") { |log| log << "Executing ssh commands:\n#{joined_commands}" }
+	  ssh_log.debug { "Executing ssh commands: "}
+	  ssh_log.debug { joined_commands }
 	  joined_commands
+  end
+  
+  def ssh_log
+    @ssh_log ||= Logger.new("#{sumo_dir}/ssh.log")
   end
 
 	def resources(hostname)
