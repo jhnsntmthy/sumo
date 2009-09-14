@@ -166,8 +166,9 @@ class Sumo
 			'apt-get update',
 			'apt-get autoremove -y',
 			'apt-get install -y ruby ruby-dev git-core',
-			"curl --silent -L -O #{rubygems_url}",
-			"cd #{rubygems}",
+			"wget -P/tmp #{rubygems_url}",
+			"tar xzf /tmp/#{rubygems}.tgz",
+			"cd /tmp/#{rubygems}",
 			"ruby setup.rb",
 			'gem sources -a http://gems.opscode.com',
 			'gem install chef ohai --no-rdoc --no-ri',
@@ -183,7 +184,7 @@ class Sumo
 		]
 		ssh(hostname, commands)
 	end
-
+	
 	def ssh(hostname, cmds)
 		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
 			pipe.puts cmds.join(' && ')
@@ -192,6 +193,12 @@ class Sumo
 			abort "failed\nCheck ~/.sumo/ssh.log for the output"
 		end
 	end
+
+	def prep_ssh_commands(cmds)
+	  joined_commands = cmds.join(' && ')
+	  File.open("~/.sumo/ssh.log", "+w") { |log| log << "Executing ssh commands:\n#{joined_commands}" }
+	  joined_commands
+  end
 
 	def resources(hostname)
 		@resources ||= {}

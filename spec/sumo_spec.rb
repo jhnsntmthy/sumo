@@ -28,4 +28,16 @@ describe Sumo do
 		end
 		@sumo.config['user'].should == 'joe'
 	end
+	
+	describe "commands" do
+	  it "joins them" do
+	    Sumo.new.prep_ssh_commands(["ls", "echo 'hi'"]).should == "ls && echo 'hi'"
+    end
+    
+    it "logs them to ssh.log" do
+      sumo = Sumo.new
+      sumo.prep_ssh_commands(["ls", "echo 'hi'"])
+      File.read("#{@work_path}/ssh.log").should == "foo"
+    end
+  end
 end
