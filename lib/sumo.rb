@@ -173,11 +173,13 @@ class Sumo
 	end
 
 	def bootstrap_chef(hostname)
+	  rubygems = "rubygems-1.3.5"
+	  rubygems_url = "http://files.rubyforge.vm.bytemark.co.uk/rubygems/#{rubygems}.tgz"
 		commands = [
 			'apt-get update',
 			'apt-get autoremove -y',
 			"apt-get install -y ruby ruby1.8-dev libopenssl-ruby1.8 rdoc build-essential wget git-core",
-			"wget -P/tmp #{rubygems_url}",
+			"curl --silent -L -O #{rubygems_url}",
 			"cd /tmp",
 			"tar xzf #{rubygems}.tgz -v",
 			"cd #{rubygems}",
