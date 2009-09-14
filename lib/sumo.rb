@@ -176,7 +176,7 @@ class Sumo
 			"gem sources -a http://gems.opscode.com",
 			"gem install chef ohai --no-rdoc --no-ri",
 			"cd ~",
-			"git clone #{config['cookbooks_url']}",
+			"git clone #{config['cookbooks_url']} chef-cookbooks",
 		]
 		ssh(hostname, commands)
 	end
