@@ -49,7 +49,7 @@ class CLI < Thor
 		display_resources(inst[:hostname])
 	end
 
-	desc "bootstrap", "bootstrap chef and cookbooks"
+	desc "bootstrap [<instance_id or hostname]", "bootstrap specified instance or first available with chef and cookbooks"
 	def bootstrap(id=nil)
 		inst = sumo.find(id) || sumo.running.first || abort("No running instances")
 		task "Bootstrap chef" do
@@ -57,7 +57,7 @@ class CLI < Thor
 		end
 	end
 
-	desc "role", "setup instance as a role"
+	desc "role [<role>] [<instance_id or hostname>]", "setup specified instance or first available as specified role"
 	def role(role, id=nil)
 		inst = sumo.find(id) || sumo.running.first || abort("No running instances")
 		task "Setup #{role}" do

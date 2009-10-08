@@ -28,4 +28,15 @@ describe Sumo do
 		end
 		@sumo.config['user'].should == 'joe'
 	end
+	
+	describe "prep_ssh_commands" do
+	  it "joins them" do
+	    @sumo.prepare_commands(["ls", "echo 'hi'"]).should == "ls && echo 'hi'"
+    end
+    
+    it "logs them to ssh.log" do
+      @sumo.prepare_commands(["cd foo", "ruby baz.rb"])
+      File.read("#{@work_path}/ssh.log").should include("cd foo && ruby baz.rb")
+    end
+  end
 end

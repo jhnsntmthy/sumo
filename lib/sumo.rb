@@ -1,6 +1,7 @@
 require 'AWS'
 require 'yaml'
 require 'socket'
+require 'logger'
 
 class Sumo
 	def launch
@@ -160,13 +161,22 @@ class Sumo
 	end
 
 	def bootstrap_chef(hostname)
+	  rubygems = "rubygems-1.3.5"
+	  rubygems_url = "http://files.rubyforge.vm.bytemark.co.uk/rubygems/#{rubygems}.tgz"
 		commands = [
-			'apt-get update',
-			'apt-get autoremove -y',
-			'apt-get install -y ruby ruby-dev rubygems git-core',
-			'gem sources -a http://gems.opscode.com',
-			'gem install chef ohai --no-rdoc --no-ri',
-			"git clone #{config['cookbooks_url']}",
+			"apt-get update",
+			"apt-get autoremove -y",
+			"apt-get install -y ruby ruby1.8-dev libopenssl-ruby1.8 rdoc build-essential wget",
+			"wget -P/tmp #{rubygems_url}",
+			"cd /tmp",
+			"tar xzf #{rubygems}.tgz -v",
+			"cd #{rubygems}",
+			"/usr/bin/env ruby setup.rb",
+			"ln -sfv /usr/bin/gem1.8 /usr/bin/gem",
+			"gem sources -a http://gems.opscode.com",
+			"gem install chef ohai --no-rdoc --no-ri",
+			"cd ~",
+			"git clone #{config['cookbooks_url']} chef-cookbooks",
 		]
 		ssh(hostname, commands)
 	end
@@ -178,15 +188,26 @@ class Sumo
 		]
 		ssh(hostname, commands)
 	end
-
+	
 	def ssh(hostname, cmds)
 		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
-			pipe.puts cmds.join(' && ')
+			pipe.puts prepare_commands(cmds)
 		end
 		unless $?.success?
 			abort "failed\nCheck ~/.sumo/ssh.log for the output"
 		end
 	end
+
+	def prepare_commands(cmds)
+	  joined_commands = cmds.join(' && ')
+	  ssh_log.debug { "Executing ssh commands: "}
+	  ssh_log.debug { joined_commands }
+	  joined_commands
+  end
+  
+  def ssh_log
+    @ssh_log ||= Logger.new("#{sumo_dir}/ssh.log")
+  end
 
 	def resources(hostname)
 		@resources ||= {}
