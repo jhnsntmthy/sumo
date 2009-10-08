@@ -191,9 +191,9 @@ class Sumo
 			"cd ~",
 			"git clone #{config['cookbooks_url']} #{cookbooks_path}",
 		]
-
-    if config['private_chef_repo']
+		if config['private_chef_repo']
 		  commands.unshift("echo -e \"Host github.com\n\tStrictHostKeyChecking no\n\" >> ~/.ssh/config") 
+		end
 		end
 
     if config['enable_submodules'] 
