@@ -190,7 +190,8 @@ class Sumo
 	end
 	
 	def ssh(hostname, cmds)
-		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
+	  private_options = "-A" if config['private_chef_repo']
+		IO.popen("ssh #{private_options} -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
 			pipe.puts prepare_commands(cmds)
 		end
 		unless $?.success?
