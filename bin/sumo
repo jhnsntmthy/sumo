@@ -165,7 +165,10 @@ class CLI < Thor
 
 		def connect_ssh(hostname)
 			sumo.wait_for_ssh(hostname)
-			system sumo.ssh_command(hostname)
+			private_options = "-A" if config['private_chef_repo']
+			system "ssh #{private_options} -i #{sumo.keypair_file} #{config['user']}@#{hostname}"
+                        # TODO port private options to ssh_command.
+                        system sumo.ssh_command(hostname)
 			if $?.success?
 				puts "\nType 'sumo terminate' if you're done with this instance."
 			end

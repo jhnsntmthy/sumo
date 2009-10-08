@@ -218,7 +218,10 @@ class Sumo
 
 	def ssh(hostname, cmds)
 		copy_key(hostname)
-		IO.popen("#{ssh_command(hostname)} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
+	        private_options = "-A" if config['private_chef_repo']
+		IO.popen("ssh #{private_options} -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
+		# TODO port private ssh options to ssh_command method then refactor.
+		#IO.popen("#{ssh_command(hostname)} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
 			pipe.puts cmds.join(' && ')
 		end
 
