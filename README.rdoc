@@ -56,6 +56,7 @@ Optional config you can include any of the following in your config.yml:
     ami: ami-ed46a784
      availability_zone: us-east-1b
     cookbooks_url: git://github.com/adamwiggins/chef-cookbooks.git
+    private_chef_repo: true
 
 You'll need Bacon and Mocha if you want to run the specs, and Jewler if you want to create gems.
 
