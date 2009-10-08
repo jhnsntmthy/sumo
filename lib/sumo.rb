@@ -171,12 +171,19 @@ class Sumo
 		commands = [
 			'apt-get update',
 			'apt-get autoremove -y',
-			'apt-get install -y ruby ruby-dev rubygems git-core',
+			"apt-get install -y ruby ruby1.8-dev libopenssl-ruby1.8 rdoc build-essential wget git-core",
+			"wget -P/tmp #{rubygems_url}",
+			"cd /tmp",
+			"tar xzf #{rubygems}.tgz -v",
+			"cd #{rubygems}",
+			"/usr/bin/env ruby setup.rb",
+			"ln -sfv /usr/bin/gem1.8 /usr/bin/gem",
 			'gem sources -a http://gems.opscode.com',
 			'gem install chef ohai --no-rdoc --no-ri',
       # Install thor, then execute:
       # thor install http://fqdn/sumo/bootstrap.thor
 			"rm -rf #{cookbooks_path}",
+			"cd ~",
 			"git clone #{config['cookbooks_url']} #{cookbooks_path}",
 		]
 		ssh(hostname, commands)
