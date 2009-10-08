@@ -195,6 +195,7 @@ class Sumo
 	def setup_role(hostname, role)
 		commands = [
 			"cd chef-cookbooks",
+			"rake roles",
 			"chef-solo -c config.json -j roles/#{role}.json"
 		]
 		ssh(hostname, commands)
