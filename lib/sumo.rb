@@ -166,7 +166,7 @@ class Sumo
 		commands = [
 			"apt-get update",
 			"apt-get autoremove -y",
-			"apt-get install -y ruby ruby1.8-dev libopenssl-ruby1.8 rdoc build-essential wget",
+			"apt-get install -y ruby ruby1.8-dev libopenssl-ruby1.8 rdoc build-essential wget git-core",
 			"wget -P/tmp #{rubygems_url}",
 			"cd /tmp",
 			"tar xzf #{rubygems}.tgz -v",
