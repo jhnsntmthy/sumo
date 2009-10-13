@@ -196,7 +196,7 @@ class Sumo
 		commands = [
 			"cd chef-cookbooks",
 			"rake roles",
-			"chef-solo -c config.json -j roles/#{role}.json"
+			"chef-solo -c config/solo.rb -j roles/#{role}.json"
 		]
 		ssh(hostname, commands)
 	end
