@@ -174,7 +174,7 @@ class Sumo
 			"/usr/bin/env ruby setup.rb",
 			"ln -sfv /usr/bin/gem1.8 /usr/bin/gem",
 			"gem sources -a http://gems.opscode.com",
-			"gem install chef ohai --no-rdoc --no-ri",
+			"gem install chef ohai rake --no-rdoc --no-ri",
 			"cd ~",
 			"git clone #{config['cookbooks_url']} chef-cookbooks",
 		]
@@ -195,7 +195,8 @@ class Sumo
 	def setup_role(hostname, role)
 		commands = [
 			"cd chef-cookbooks",
-			"/var/lib/gems/1.8/bin/chef-solo -c config.json -j roles/#{role}.json"
+			"rake roles",
+			"chef-solo -c config/solo.rb -j roles/#{role}.json"
 		]
 		ssh(hostname, commands)
 	end
