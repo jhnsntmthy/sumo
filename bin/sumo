@@ -142,6 +142,7 @@ class CLI < Thor
 
 		def task(msg, &block)
 			printf "---> %-24s ", "#{msg}..."
+			$stdout.flush
 			start = Time.now
 			result = block.call || 'done'
 			finish = Time.now
