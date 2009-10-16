@@ -174,14 +174,15 @@ class Sumo
 			'apt-get install -y ruby ruby-dev rubygems git-core',
 			'gem sources -a http://gems.opscode.com',
 			'gem install chef ohai --no-rdoc --no-ri',
-			"git clone #{config['cookbooks_url']}",
+			"rm -rf #{cookbooks_path}",
+			"git clone #{config['cookbooks_url']} #{cookbooks_path}",
 		]
 		ssh(hostname, commands)
 	end
 
 	def setup_role(hostname, role)
 		commands = [
-			"cd chef-cookbooks",
+			"cd #{cookbooks_path}",
 			"/var/lib/gems/1.8/bin/chef-solo -c config.json -j roles/#{role}.json"
 		]
 		ssh(hostname, commands)
@@ -236,6 +237,10 @@ class Sumo
 
 	def sumo_dir
 		"#{ENV['HOME']}/.sumo"
+	end
+
+	def cookbooks_path
+		config['cookbooks_path'] || 'chef-cookbooks'
 	end
 
 	def ssh_command(hostname)
