@@ -159,6 +159,13 @@ class Sumo
 		end
 	end
 
+	def sync_files(hostname)
+		if config['tarball']
+			# Safety check perms on /root or you'll be locked out
+			`(cat #{config['tarball']} | #{ssh_command(hostname)} 'cd / && tar xz && chown -R root:root /root' )`
+		end
+	end
+
 	def bootstrap_chef(hostname)
 		commands = [
 			'apt-get update',
