@@ -13,6 +13,7 @@ class CLI < Thor
 		task("Wait for ssh") { sumo.wait_for_ssh(host) }
 
 		if role
+			task("Bootstrap platform") { sumo.sync_files(host) }
 			task("Bootstrap chef") { sumo.bootstrap_chef(host) }
 			role.split(',').each do |role|
 				task("Setup #{role}") { sumo.setup_role(host, role) }
@@ -53,6 +54,7 @@ class CLI < Thor
 	desc "bootstrap", "bootstrap chef and cookbooks"
 	def bootstrap(id=nil)
 		inst = sumo.find(id) || sumo.running.first || abort("No running instances")
+		task("Bootstrap platform") { sumo.sync_files(inst[:hostname]) }
 		task "Bootstrap chef" do
 			sumo.bootstrap_chef(inst[:hostname])
 		end
