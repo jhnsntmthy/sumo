@@ -242,6 +242,10 @@ class Sumo
 		config['cookbooks_path'] || 'chef-cookbooks'
 	end
 
+	def keypair_name
+		config['keypair_name'] || 'sumo'
+	end
+
 	def ssh_command(hostname)
 		"ssh -i #{keypair_file} #{config['user']}@#{hostname}"
 	end
@@ -257,7 +261,7 @@ class Sumo
 	end
 
 	def create_keypair
-		keypair = ec2.create_keypair(:key_name => "sumo").keyMaterial
+		keypair = ec2.create_keypair(:key_name => keyname_name).keyMaterial
 		File.open(keypair_file, 'w') { |f| f.write keypair }
 		File.chmod 0600, keypair_file
 	end
