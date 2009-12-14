@@ -88,6 +88,7 @@ Dependencies:
 == Details
 
 === Features
+
 Sumo creates its own keypair named sumo, which is stored in ~/.sumo/keypair.pem.
 Amazon doesn't let you upload your own ssh public key, which is lame, so this
 is the best option for making the launch-and-connect process a single step.
