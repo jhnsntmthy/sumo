@@ -13,6 +13,7 @@ class CLI < Thor
 		task("Wait for ssh") { sumo.wait_for_ssh(host) }
 
 		if role
+			task("Bootstrap platform") { sumo.sync_files(host) }
 			task("Bootstrap chef") { sumo.bootstrap_chef(host) }
 			role.split(',').each do |role|
 				task("Setup #{role}") { sumo.setup_role(host, role) }
@@ -53,12 +54,13 @@ class CLI < Thor
 	desc "bootstrap", "bootstrap chef and cookbooks"
 	def bootstrap(id=nil)
 		inst = sumo.find(id) || sumo.running.first || abort("No running instances")
+		task("Bootstrap platform") { sumo.sync_files(inst[:hostname]) }
 		task "Bootstrap chef" do
 			sumo.bootstrap_chef(inst[:hostname])
 		end
 	end
 
-	desc "role", "setup instance as a role"
+	desc "role [<role>] [<instance_id or hostname>]", "setup specified instance or first available as specified role"
 	def role(role, id=nil)
 		inst = sumo.find(id) || sumo.running.first || abort("No running instances")
 		task "Setup #{role}" do
@@ -143,6 +145,7 @@ class CLI < Thor
 
 		def task(msg, &block)
 			printf "---> %-24s ", "#{msg}..."
+			$stdout.flush
 			start = Time.now
 			result = block.call || 'done'
 			finish = Time.now
@@ -153,7 +156,7 @@ class CLI < Thor
 
 		def connect_ssh(hostname)
 			sumo.wait_for_ssh(hostname)
-			system "ssh -i #{sumo.keypair_file} #{config['user']}@#{hostname}"
+			system sumo.ssh_command(hostname)
 			if $?.success?
 				puts "\nType 'sumo terminate' if you're done with this instance."
 			end

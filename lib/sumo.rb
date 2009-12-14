@@ -11,6 +11,7 @@ class Sumo
 
 		create_security_group
 		open_firewall(22)
+		enable_ping
 
 		result = ec2.run_instances(
 			:image_id => ami,
@@ -159,6 +160,13 @@ class Sumo
 		end
 	end
 
+	def sync_files(hostname)
+		if config['tarball']
+			# Safety check perms on /root or you'll be locked out
+			`(cat #{config['tarball']} | #{ssh_command(hostname)} 'cd / && tar xz && chown -R root:root /root' )`
+		end
+	end
+
 	def bootstrap_chef(hostname)
 		commands = [
 			'apt-get update',
@@ -168,21 +176,22 @@ class Sumo
 			'gem install chef ohai --no-rdoc --no-ri',
       # Install thor, then execute:
       # thor install http://fqdn/sumo/bootstrap.thor
-			"git clone #{config['cookbooks_url']}",
+			"rm -rf #{cookbooks_path}",
+			"git clone #{config['cookbooks_url']} #{cookbooks_path}",
 		]
 		ssh(hostname, commands)
 	end
 
 	def setup_role(hostname, role)
 		commands = [
-			"cd chef-cookbooks",
-			"/var/lib/gems/1.8/bin/chef-solo -c config.json -j roles/#{role}.json"
+			"cd #{cookbooks_path}",
+			"/var/lib/gems/1.8/bin/chef-solo -c config/solo.rb -j roles/#{role}.json"
 		]
 		ssh(hostname, commands)
 	end
 
 	def ssh(hostname, cmds)
-		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
+		IO.popen("#{ssh_command(hostname)} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
 			pipe.puts cmds.join(' && ')
 		end
 		unless $?.success?
@@ -196,7 +205,7 @@ class Sumo
 	end
 
 	def fetch_resources(hostname)
-		cmd = "ssh -i #{keypair_file} #{config['user']}@#{hostname} 'cat /root/resources' 2>&1"
+		cmd = "#{ssh_command(hostname)} 'cat /root/resources' 2>&1"
 		out = IO.popen(cmd, 'r') { |pipe| pipe.read }
 		abort "failed to read resources, output:\n#{out}" unless $?.success?
 		parse_resources(out, hostname)
@@ -230,6 +239,14 @@ class Sumo
 
 	def sumo_dir
 		"#{ENV['HOME']}/.sumo"
+	end
+
+	def cookbooks_path
+		config['cookbooks_path'] || 'chef-cookbooks'
+	end
+
+	def ssh_command(hostname)
+		"ssh -i #{keypair_file} #{config['user']}@#{hostname}"
 	end
 
 	def read_config
@@ -274,18 +291,29 @@ class Sumo
 		)
 	rescue AWS::InvalidPermissionDuplicate
 	end
+	
+	def enable_ping
+		ec2.authorize_security_group_ingress(
+			:group_name => 'sumo',
+			:ip_protocol => 'icmp',
+			:from_port => -1,
+			:to_port => -1,
+			:cidr_ip => '0.0.0.0/0'	  
+		)
+	rescue AWS::InvalidPermissionDuplicate
+	end
 
 	def ec2
-    @ec2 ||= AWS::EC2::Base.new(
-      :access_key_id => config['access_id'], 
-      :secret_access_key => config['access_secret'], 
-      :server => server
-    )
+		@ec2 ||= AWS::EC2::Base.new(
+			:access_key_id => config['access_id'], 
+			:secret_access_key => config['access_secret'], 
+			:server => server
+		)
 	end
 	
 	def server
-	  zone = config['availability_zone']
-	  host = zone.slice(0, zone.length - 1)
-	  "#{host}.ec2.amazonaws.com"
-  end
+		zone = config['availability_zone']
+		host = zone.slice(0, zone.length - 1)
+		"#{host}.ec2.amazonaws.com"
+	end
 end
