@@ -1,4 +1,6 @@
-= Tired of wrestling with EC2 server provisioning?  Sumo!
+= Tired of wrestling with EC2 server provisioning?[*]  Sumo!
+
+\* Currently only Ubuntu is supported.
 
 Configure multiple roles (ooh, aah, wow) defined in multiple Chef (version 0.8)
 repositories (mine, yours, local (Sumo's)):

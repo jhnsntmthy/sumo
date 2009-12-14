@@ -1,2 +1,6 @@
 pkg
 sumo.gemspec
+# temp files,
+*~
+# Netbeans IDE files
+nbproject*
