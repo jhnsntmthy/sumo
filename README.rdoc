@@ -1,32 +1,124 @@
-= Tired of wrestling with server provisioning?  Sumo!
+= Tired of wrestling with EC2 server provisioning?  Sumo!
 
-Want to fire up a one-off EC2 instance, pronto?  ec2-run-instances got you down?  Try Sumo.
+Configure multiple roles (ooh, aah, wow) defined in multiple Chef (version 0.8)
+repositories (mine, yours, local (Sumo's)):
 
-    $ sumo launch
-    ---> Launching instance...    i-4f809c26 (1.5s)
-    ---> Acquiring hostname...    ec2-67-202-17-178.compute-1.amazonaws.com (26.7s)
+    $ sumo launch mine:ooh,yours:aah,wow
 
-    Logging you in via ssh.  Type 'exit' or Ctrl-D to return to your local system.
-    ------------------------------------------------------------------------------
-    Linux domU-12-31-39-04-31-37 2.6.21.7-2.fc8xen #1 SMP Fri Feb 15 12:39:36 EST 2008 i686
-    ...
-    root@domU-12-31-39-04-31-37:~# 
+For those unfortunate to have a "big-brother" snooping, the following should
+just-work (please log reproducible bugs in the github issue tracker):
 
-Later...
+    $ sumo launch openvpn --access_id: <aws_id> --access_secret: <aws_key>
 
-    $ sumo terminate
-    ec2-67-202-17-178.compute-1.amazonaws.com scheduled for termination
+You can manage multiple instances via "sumo list".
 
-You can manage multiple instances via "sumo list" and specifying hostname or instance id as arguments to the ssh or terminate commands.
+== Sumo commands
+To get help:
+    sumo help [ command ]
 
-== Service installation with Chef
+Commands
 
-The launch command takes an argument, which is a server role (from roles/#{role}.json inside your cookbooks repo):
+    sumo attach
+    sumo create_volume
+    sumo destroy_volume
+    sumo detach
+    sumo help
+    sumo launch
+    sumo ssh [ fqdn | instance_id ]
+    sumo terminate [ fqdn | instance_id ]
+    sumo volumes
+
+== Sumo cookbook repositories
+Default Chef cookbook repositories are:
+
+{git://github.com/opscode/cookbooks.git}[http://github.com/opscode/cookbooks]
+{git://github.com/37signals/37s_cookbooks.git}[http://github.com/37signals/37s_cookbooks]
+
+Additional repositories can be added to ~/.sumo/config.yaml.
+==== Example:
+
+   myrepo: git://github.com/your/own_cookbook.git
+
+A role, say ubeauty, from this repository is passed to Sumo as:
+
+   sumo launch myrepo:ubeauty
+
+If instead you had added the ubeauty Chef recipe to ~/.sumo/cookbooks:
+
+   sumo launch ubeauty
+
+== Setup
+
+=== User
+
+    $ sudo gem install sumo
+
+Dependencies:
+  * amazon-ec2
+  * thor
+
+Configuration:
+
+    $ rake sumo:defaults
+
+Then edit ~/.sumo/config.yml defaults:
+
+    ---
+    access_id: <your amazon access key id>                           # required
+    access_secret: <your amazon secret access key>                   # required
+    ami: ami-ed46a784                                                # default
+    user: root                                                       # default
+    availability_zone: us-east-1b                                    # default
+    37s: git://github.com/37signals/37s-cookbooks.git                # default
+    opscode: git://github.com/opscode/cookbooks.git                  # default
+
+=== Developer
+
+    $ sudo gem install sumo-dev
+
+Dependencies:
+  * amazon-ec2
+  * thor
+  * bacon
+  * jeweller
+  * mocha
+
+== Details
+
+=== Features
+Sumo creates its own keypair named sumo, which is stored in ~/.sumo/keypair.pem.
+Amazon doesn't let you upload your own ssh public key, which is lame, so this
+is the best option for making the launch-and-connect process a single step.
+
+It will also create an Amazon security group called sumo, so that it can lower
+the firewall for services you configure via cookbook roles.
+
+If you run any production machines from your EC2 account, I recommend setting
+up a separate account for use with Sumo.  It does not prompt for confirmation
+when terminating an instance or differentiate between instances started by it
+vs. instances started by other tools.
+
+=== Anti-features
+
+Sumo is not a cloud management tool, a monitor tool, or anything more than a
+way to get an instance up right quick.  If you're looking for a way to manage
+a cluster of production instances, try one of these fine tools.
+
+* Pool Party
+* RightScale
+* Engine Yard Cloud
+* Cloudkick
+
+== Examples
+=== Service installation with Chef
+
+The launch command takes an argument, which is a server role (from
+roles/#{role}.json inside your cookbooks repo):
 
     $ sumo launch redis
     ---> Launch instance...       i-b96c73d0 (1.3s)
     ---> Acquire hostname...      ec2-75-101-191-220.compute-1.amazonaws.com (36.1s)
-    ---> Wait for ssh...          done (9.0s)
+    ---> Wait for ssh...          done (979.0s)
     ---> Bootstrap chef...        done (61.3s)
     ---> Setup redis...           done (11.9s)
     ---> Opening firewall...      ports 6379 (5.2s)
@@ -34,32 +126,7 @@ The launch command takes an argument, which is a server role (from roles/#{role}
     Your instance is exporting the following resources:
       Redis: redis://:8452cdd98f428c972f08@ec2-75-101-191-220.compute-1.amazonaws.com:6379/0
 
-The instance can assume multiple roles if you like:
-
-    $ sumo launch redis,solr,couchdb
-
-== Setup
-
-Dependencies:
-
-    $ sudo gem install amazon-ec2 thor
-
-Then create ~/.sumo/config.yml containing:
-
-    ---
-    access_id: <your amazon access key id>
-    access_secret: <your amazon secret access key>
-
-Optional config you can include any of the following in your config.yml:
-
-    user: root
-    ami: ami-ed46a784
-     availability_zone: us-east-1b
-    cookbooks_url: git://github.com/adamwiggins/chef-cookbooks.git
-
-You'll need Bacon and Mocha if you want to run the specs, and Jewler if you want to create gems.
-
-== Managing volumes
+=== Managing volumes
 
 Create and attach a volume to your running instance:
 
@@ -92,23 +159,6 @@ Destroy it if you no longer want the data stored on it:
 
    $ sumo destroy_volume
    ---> Destroy volume...        done (0.8s)
-
-== Some details you might want to know
-
-Sumo creates its own keypair named sumo, which is stored in ~/.ssh/keypair.pem.  Amazon doesn't let you upload your own ssh public key, which is lame, so this is the best option for making the launch-and-connect process a single step.
-
-It will also create an Amazon security group called sumo, so that it can lower the firewall for services you configure via cookbook roles.
-
-If you run any production machines from your EC2 account, I recommend setting up a separate account for use with Sumo.  It does not prompt for confirmation when terminating an instance or differentiate between instances started by it vs. instances started by other tools.
-
-== Anti-features
-
-Sumo is not a cloud management tool, a monitor tool, or anything more than a way to get an instance up right quick.  If you're looking for a way to manage a cluster of production instances, try one of these fine tools.
-
-* Pool Party
-* RightScale
-* Engine Yard Cloud
-* Cloudkick
 
 == Meta
 
