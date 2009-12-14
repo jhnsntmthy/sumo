@@ -179,7 +179,7 @@ class Sumo
 			"/usr/bin/env ruby setup.rb",
 			"ln -sfv /usr/bin/gem1.8 /usr/bin/gem",
 			'gem sources -a http://gems.opscode.com',
-			'gem install chef ohai --no-rdoc --no-ri',
+			'gem install chef ohai rake --no-rdoc --no-ri',
       # Install thor, then execute:
       # thor install http://fqdn/sumo/bootstrap.thor
 			"rm -rf #{cookbooks_path}",
@@ -201,12 +201,13 @@ class Sumo
 	def ssh(hostname, cmds)
 		copy_key(hostname)
 		IO.popen("#{ssh_command(hostname)} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
-		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
 			pipe.puts cmds.join(' && ')
 		end
+
 		unless $?.success?
 			abort "failed\nCheck ~/.sumo/ssh.log for the output"
 		end
+
 	end
 
 	def copy_key(hostname)
