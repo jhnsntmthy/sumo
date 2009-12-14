@@ -191,12 +191,18 @@ class Sumo
 	end
 
 	def ssh(hostname, cmds)
+		copy_key(hostname)
 		IO.popen("#{ssh_command(hostname)} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
+		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
 			pipe.puts cmds.join(' && ')
 		end
 		unless $?.success?
 			abort "failed\nCheck ~/.sumo/ssh.log for the output"
 		end
+	end
+
+	def copy_key(hostname)
+		IO.popen("scp -i #{keypair_file} #{keypair_file} #{config['user']}@#{hostname}:~/.ssh")
 	end
 
 	def resources(hostname)
