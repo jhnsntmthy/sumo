@@ -166,6 +166,8 @@ class Sumo
 			'apt-get install -y ruby ruby-dev rubygems git-core',
 			'gem sources -a http://gems.opscode.com',
 			'gem install chef ohai --no-rdoc --no-ri',
+      # Install thor, then execute:
+      # thor install http://fqdn/sumo/bootstrap.thor
 			"git clone #{config['cookbooks_url']}",
 		]
 		ssh(hostname, commands)
