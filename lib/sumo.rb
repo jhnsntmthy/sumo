@@ -231,7 +231,6 @@ class Sumo
 		unless $?.success?
 			abort "failed\nCheck ~/.sumo/ssh.log for the output"
 		end
-
 	end
 
 	def copy_key(hostname)
