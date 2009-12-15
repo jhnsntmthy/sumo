@@ -367,6 +367,17 @@ class Sumo
 		)
 	rescue AWS::InvalidPermissionDuplicate
 	end
+	
+	def enable_ping
+		ec2.authorize_security_group_ingress(
+			:group_name => 'sumo',
+			:ip_protocol => 'icmp',
+			:from_port => -1,
+			:to_port => -1,
+			:cidr_ip => '0.0.0.0/0'	  
+		)
+	rescue AWS::InvalidPermissionDuplicate
+	end
 
 	def ec2
 		@ec2 ||= AWS::EC2::Base.new(
