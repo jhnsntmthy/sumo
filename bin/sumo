@@ -3,10 +3,19 @@
 require 'rubygems'
 require File.dirname(__FILE__) + '/../lib/sumo'
 
-require 'thor'
+begin
+    require 'thor'
+rescue LoadError
+    puts "You must have the thor gem installed to run sumo"
+end
 
 class CLI < Thor
-	desc "launch [<role>]", "launch an instance as role, or omit to ssh to vanilla instance"
+     map "-L" => :launch
+     map "-l" => :list
+     map "-t" => :terminate
+     map "-ta" => :terminate_all
+
+    desc "launch [<role>]", "launch an instance as role, or omit to ssh to vanilla instance"
 	def launch(role=nil)
 		id = task("Launch instance") { sumo.launch }
 		host = task("Acquire hostname") { sumo.wait_for_hostname(id) }
