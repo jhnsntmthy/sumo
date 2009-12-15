@@ -183,7 +183,7 @@ class Sumo
 			"wget -P/tmp #{rubygems_url}",
 			"cd /tmp",
 			"tar xzf #{rubygems}.tgz -v",
-			"cd /tmp/#{rubygems}",
+			"cd #{rubygems}",
 			"/usr/bin/env ruby setup.rb",
 			"ln -sfv /usr/bin/gem1.8 /usr/bin/gem",
 			"gem sources -a http://gems.opscode.com",
@@ -207,7 +207,7 @@ class Sumo
 		    "git submodule update"		    
 		  ]
 		end
-
+		
 		ssh(hostname, commands)
 	end
 
@@ -224,6 +224,7 @@ class Sumo
 		copy_key(hostname)
 	        private_options = "-A" if config['private_chef_repo']
 		IO.popen("ssh #{private_options} -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
+			pipe.puts prepare_commands(cmds)
 		# TODO port private ssh options to ssh_command method then refactor.
 		#IO.popen("#{ssh_command(hostname)} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
 		end
@@ -232,6 +233,17 @@ class Sumo
 			abort "failed\nCheck ~/.sumo/ssh.log for the output"
 		end
 	end
+
+	def prepare_commands(cmds)
+	  joined_commands = cmds.join(' && ')
+	  ssh_log.debug { "Executing ssh commands: "}
+	  ssh_log.debug { joined_commands }
+	  joined_commands
+  end
+  
+  def ssh_log
+    @ssh_log ||= Logger.new("#{sumo_dir}/ssh.log")
+  end
 
 	def copy_key(hostname)
 		IO.popen("scp -i #{keypair_file} #{keypair_file} #{config['user']}@#{hostname}:~/.ssh")

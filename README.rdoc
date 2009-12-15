@@ -79,6 +79,8 @@ Then edit ~/.sumo/config.yml defaults:
     $ sudo gem install sumo-dev
     enable_submodules: true
     private_chef_repo: true
+    private_chef_repo: true
+    enable_submodules: true
 
 Dependencies:
   * amazon-ec2
