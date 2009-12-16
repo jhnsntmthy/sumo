@@ -1,6 +1,12 @@
-pkg
 sumo.gemspec
+/pkg
+/coverage
+/spec/sandbox
+/rdocsumo.gemspec
 # temp files,
 *~
 # Netbeans IDE files
 nbproject*
+*.netbeans
+# kdiff3 files
+*.orig
