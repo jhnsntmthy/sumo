@@ -10,7 +10,7 @@ rescue LoadError
     puts "You must have the thor gem installed to run sumo"
 end
 
-class CLI < Thor
+class CLI < ::Thor
      map "-L" => :launch
      map "-l" => :list
      map "-t" => :terminate
