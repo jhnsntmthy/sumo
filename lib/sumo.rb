@@ -1,12 +1,27 @@
 begin
-    require 'AWS'
+    require 'right_aws'
 rescue LoadError
-    puts "You must have the amazon-ec2 gem installed to run sumo"
+    puts "Sumo requires the right_aws gem be in Ruby's load path"
 end
-
+require 'thor'
 require 'yaml'
 require 'socket'
+require 'json'
 require 'logger'
+
+require 'right_aws'
+require 'sdb/active_sdb'
+
+require 'sumo/config'
+require 'sumo/instance'
+
+if $SUMO_TEST_STACK
+  require 'fileutils'
+  require 'stringio'
+  require 'rr'
+  require 'diff/lcs'
+end
+
 
 class Sumo
 	def launch
@@ -198,7 +213,6 @@ class Sumo
 		if config['private_chef_repo']
 		  commands.unshift("echo -e \"Host github.com\n\tStrictHostKeyChecking no\n\" >> ~/.ssh/config") 
 		end
-		end
 
     if config['enable_submodules'] 
 		  commands << [
@@ -382,7 +396,7 @@ class Sumo
 	def ec2
 		@ec2 ||= AWS::EC2::Base.new(
 			:access_key_id => config['access_key_id'],
-			:secret_access_key => config['secret_access_key']
+			:secret_access_key => config['secret_access_key'],
 			:server => server
 		)
 	end

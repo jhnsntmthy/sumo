@@ -1,6 +1,4 @@
-require File.dirname(__FILE__) + '/base'
-
-require 'fileutils'
+require File.join(File.dirname(__FILE__), 'spec_helper')
 
 describe Sumo do
 	before do
