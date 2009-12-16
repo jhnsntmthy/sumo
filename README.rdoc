@@ -1,45 +1,61 @@
-= Tired of wrestling with EC2 server provisioning?[*]  Sumo!
+= Tired of wrestling with server provisioning?[*]  Sumo!
 
-\* Currently only Ubuntu is supported.
+\* Currently only Ubuntu on EC2 is implemented.
 
 Configure multiple roles (ooh, aah, wow) defined in multiple Chef (version 0.8)
-repositories (mine, yours, local (Sumo's)):
+repositories (mine, yours, local (Sumo's)).  Example:
 
     $ sumo launch mine:ooh,yours:aah,wow
 
+Sumo comes packaged with ony one Chef recipe - openvpn.
 For those unfortunate to have a "big-brother" snooping, the following should
-just-work (please log reproducible bugs in the github issue tracker):
+just-work:
 
-    $ sumo launch openvpn --access_id: <aws_id> --access_secret: <aws_key>
+    $ sumo launch openvpn --access_key_id: <aws_id> --access_secret_key: <aws_key>
 
-You can manage multiple instances via "sumo list".
+TODO Then what do yu do if you are on linux, Mac, Windows?
 
-== Sumo commands
-To get help:
-    sumo help [ command ]
+You can manage multiple instances via by running sumo multiple times.
+Please log reproducible bugs in the github 
+TODO {issue tracker}[url]
+
+== Features
 
 Commands
 
-    sumo attach
-    sumo create_volume
-    sumo destroy_volume
-    sumo detach
-    sumo help
-    sumo launch
-    sumo ssh [ fqdn | instance_id ]
-    sumo terminate [ fqdn | instance_id ]
-    sumo volumes
+# TODO     sumo help
 
-== Sumo cookbook repositories
-Default Chef cookbook repositories are:
+# TODO      Reporting commands
+        sumo describe [ all | [ volumes, instances, network ] ]
 
+# TODO      Instance management commands
+        sumo launch [ --config </path/config.json> ]
+        sumo ssh [ <fqdn> | <instance_id> ]
+        sumo terminate [ <fqdn> | <instance_id> ]
+
+# TODO      Storage management commands
+        sumo attach
+        sumo create
+        sumo delete
+        sumo detach
+
+# TODO      Network management commands
+        sumo network <dns>,<ip>,<hostname>
+        sumo hostname <fqdn-text> 
+        sumo ip <ipv4-address> 
+        sumo dns <dns-ipv4 | dns-fqdn>,... 
+
+== Default Chef repositories
+
+~/.sumo/cookbook
 {git://github.com/opscode/cookbooks.git}[http://github.com/opscode/cookbooks]
 {git://github.com/37signals/37s_cookbooks.git}[http://github.com/37signals/37s_cookbooks]
 
-Additional repositories can be added to ~/.sumo/config.yaml.
+Additional default repositories can be added to ~/.sumo/config.yaml
+
 ==== Example:
 
-   myrepo: git://github.com/your/own_cookbook.git
+   myrepo: git://github.com/myaccount/mycookbook.git
 
 A role, say ubeauty, from this repository is passed to Sumo as:
 
@@ -53,44 +69,67 @@ If instead you had added the ubeauty Chef recipe to ~/.sumo/cookbooks:
 
 === User
 
-    $ sudo gem install sumo
+# TODO    $ sudo gem install sumo --source=http://gemcutter.org
+Or
+# TODO    $ sudo rip install sumo
 
 Dependencies:
+-------------
   * amazon-ec2
   * thor
 
 Configuration:
+==============
+Amazon Web Services
+-------------------
+    $ rake sumo:config:aws  # default vendor
 
-    $ rake sumo:defaults
-
-Then edit ~/.sumo/config.yml defaults:
+Edit generated defaults in, ~/.sumo/config_aws.yml:
 
     ---
-    access_id: <your amazon access key id>                           # required
-    access_secret: <your amazon secret access key>                   # required
+    os_vendor: ubuntu | ...                                          # TODO required
+    access_key_id: <access_key_id>                                   # required
+    access_secret_key: <secret_access_key>                           # required
+    launch_count: 1                                                  # TODO default
     ami: ami-ed46a784                                                # default
     user: root                                                       # default
     availability_zone: us-east-1b                                    # default
-    37s: git://github.com/37signals/37s-cookbooks.git                # default
-    opscode: git://github.com/opscode/cookbooks.git                  # default
+    file: "~/.sumo/cookbook"                                         # TODO default
+    37s: git://github.com/37signals/37s-cookbooks.git                # TODO default
+    opscode: git://github.com/opscode/cookbooks.git                  # TODO default
+    enable_submodules: true                                          # TODO redundant if we can access multiple Chef repos
+    private_chef_repo: true                                          # TODO redundant if we fall back to private connection once public fails
 
 === Developer
 
-    $ sudo gem install sumo-dev
-    enable_submodules: true
-    private_chef_repo: true
-    enable_submodules: true
+# TODO    $ sudo gem install sumo --source=http://gemcutter.org
+Or
+# TODO    $ sudo rip install sumo
 
 Dependencies:
+-------------
   * amazon-ec2
   * thor
-  * bacon
-  * jeweller
-  * mocha
+  * rr
+  * diff-lcs
+
+# TODO  Package Manager Agnostic:
+    sudo gem
+    sudo rip
+
+# TODO  Load Path Manager Agnostic:
 
 == Details
+=== Chef Features
 
-=== Features
+
+=== AWS Features
+
+Implemented operating system vendor values (case insensitive):
+   * Until the 1.0 release, see this {listing}[wiki_url_here].
+
+Implemented AMI values
+   * Until the 1.0 release, see this {listing}[wiki_url_here].
 
 Sumo creates its own keypair named sumo, which is stored in ~/.sumo/keypair.pem.
 Amazon doesn't let you upload your own ssh public key, which is lame, so this
@@ -110,10 +149,15 @@ Sumo is not a cloud management tool, a monitor tool, or anything more than a
 way to get an instance up right quick.  If you're looking for a way to manage
 a cluster of production instances, try one of these fine tools.
 
-* Pool Party
+Cloud Management Service Providers
 * RightScale
+* Ylastic
 * Engine Yard Cloud
+
+Cloud Management Libraries
 * Cloudkick
+* Fog
+* Pool Party
 
 == Examples
 === Role installation with Chef
