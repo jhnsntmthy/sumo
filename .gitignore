@@ -1,12 +1,27 @@
-sumo.gemspec
-/pkg
-/coverage
-/spec/sandbox
-/rdocsumo.gemspec
-# temp files,
+## MAC OS
+.DS_Store
+
+## TEXTMATE
+*.tmproj
+tmtags
+
+## EMACS
 *~
-# Netbeans IDE files
+\#*
+.\#*
+
+## VIM
+*.swp
+
+## PROJECT::GENERAL
+coverage
+rdoc
+pkg
+*~
+
+## PROJECT::SPECIFIC
+/spec/sandbox
+sumo.gemspec
 nbproject*
 *.netbeans
-# kdiff3 files
 *.orig
