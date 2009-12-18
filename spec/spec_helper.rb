@@ -1,6 +1,8 @@
 $SUMO_TEST_STACK=true
 
-$:.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+$LOAD_PATH.unshift(File.join( File.dirname(__FILE__), '..', 'lib'))
+$LOAD_PATH.unshift(File.dirname(__FILE__))
+
 require 'sumo'
 
 # Set shell to basic
@@ -15,6 +17,8 @@ end
 
 Spec::Runner.configure do |config|
   config.mock_with :rr
+  # or if that doesn't work due to a version incompatibility
+  # config.mock_with RR::Adapters::Rspec
 
   def capture(stream)
     begin

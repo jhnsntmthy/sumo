@@ -1,29 +1,70 @@
-begin
-    require 'right_aws'
-rescue LoadError
-    puts "Sumo requires the right_aws gem be in Ruby's load path"
+module Sumo
+
+  # Accomodate different load path managers and no load path manager
+  def self.custom_require(gem)
+    begin
+      require gem
+    rescue LoadError
+      # TODO require 'vendor/rip' # fallback to Rip
+      # TODO require 'vendor/gems/environment.rb' # fallback to Bundler
+      # TODO Set Bundler's disable_system_gems 
+      private_require(File.expand_path(File.dirname(__FILE__)), gem)
+    end
+  end
+
+  module_function
+  
+  def private_require(dir, gem)
+    check_load_path(dir, gem)
+    final_require(gem)
+  end
+
+  def check_load_path(dir, gem)
+    exit_msg = "Sumo requires the #{gem} gem be installed correctly."
+    if $LOAD_PATH.include?(dir)
+      raise SystemExit.new(exit_msg)
+    else
+      $LOAD_PATH.unshift(dir)
+    end    
+  end
+  
+  def final_require(gem)
+    exit_msg  = "Sumo requires the #{gem} gem be installed correctly."
+    begin
+      require(gem)
+    rescue LoadError
+      raise SystemExit.new(exit_msg)
+    end
+  end
+
 end
-require 'thor'
-require 'yaml'
-require 'socket'
-require 'json'
-require 'logger'
 
-require 'right_aws'
-require 'sdb/active_sdb'
+# Require third party gem files
+%w[thor AWS yaml socket json logger net/ssh].each do |gemi|
+  ::Sumo.custom_require gemi
+end
 
-require 'sumo/config'
-require 'sumo/instance'
+# Require Sumo's library files
+#%w[config instance].each do |gemi|
+#  Sumo.tolerant_require("sumo/#{gemi}")
+#end
 
+# Require Sumo's test stack
 if $SUMO_TEST_STACK
-  require 'fileutils'
-  require 'stringio'
-  require 'rr'
-  require 'diff/lcs'
+  %w[fileutils stringio spec rr diff/lcs].each do |gemi|
+    Sumo.custom_require(gemi)
+  end
 end
 
+#TODO Add spec_task, package_task, install_task
+#
+#spec_task(Dir["spec/**/*_spec.rb"])
+#
+#to any of your Thor classes. You can also customize it like so:spec_task(Dir["spec/**/*_spec.rb"], :name => “rcov”, :rcov => {:exclude => %w(spec /Library /Users task.thor lib/getopt.rb)})
+#
+#You can also add package/install tasks via: package_task / install_task (where install_task adds package_task by default).
 
-class Sumo
+module Sumo
 	def launch
 		ami = config['ami']
 		raise "No AMI selected" unless ami
