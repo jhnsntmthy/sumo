@@ -2,8 +2,10 @@
 
 \* Currently only Ubuntu on EC2 is implemented.
 
-Configure multiple roles (ooh, aah, wow) defined in multiple Chef (version 0.8)
-repositories (mine, yours, local (Sumo's)).  Example:
+Sumo's focus is on launching and working with one cloud computing node/instance.
+
+Configure multiple Chef roles (ooh, aah, wow) defined in multiple Chef
+(version 0.8) repositories (mine, yours, local (Sumo's)).  Example:
 
     $ sumo launch mine:ooh,yours:aah,wow
 
@@ -13,7 +15,7 @@ just-work:
 
     $ sumo launch openvpn --access_key_id: <aws_id> --access_secret_key: <aws_key>
 
-TODO Then what do yu do if you are on linux, Mac, Windows?
+# TODO Then what do you do if you are on linux, Mac, Windows?
 
 You can manage multiple instances via by running sumo multiple times.
 Please log reproducible bugs in the github 
@@ -25,13 +27,10 @@ Commands
 
 # TODO     sumo help
 
-# TODO      Reporting commands
-        sumo describe [ all | [ volumes, instances, network ] ]
-
 # TODO      Instance management commands
         sumo launch [ --config </path/config.json> ]
-        sumo ssh [ <fqdn> | <instance_id> ]
         sumo terminate [ <fqdn> | <instance_id> ]
+        sumo role [ <instance_id> ] [ role_a,role_b,... ]
 
 # TODO      Storage management commands
         sumo attach
@@ -44,6 +43,13 @@ Commands
         sumo hostname <fqdn-text> 
         sumo ip <ipv4-address> 
         sumo dns <dns-ipv4 | dns-fqdn>,... 
+
+# TODO      Interaction commands
+        sumo shell [ <fqdn> | <instance_id> ]
+
+# TODO      Reporting commands
+        sumo describe [ all | [ volumes, instances, network ] ]
+        sumo log [ all | [ volumes, instances, network ] ]
 
 == Default Chef repositories
 
@@ -69,8 +75,13 @@ If instead you had added the ubeauty Chef recipe to ~/.sumo/cookbooks:
 
 === User
 
+You should install from Github until the 1.0 release.
+
+    sudo gem install adamwiggins-sumo --source http://gems.github.com
 # TODO    $ sudo gem install sumo --source=http://gemcutter.org
+
 Or
+
 # TODO    $ sudo rip install sumo
 
 Dependencies:
@@ -78,8 +89,8 @@ Dependencies:
   * amazon-ec2
   * thor
 
-Configuration:
-==============
+Sumo Configuration:
+===================
 Amazon Web Services
 -------------------
     $ rake sumo:config:aws  # default vendor
@@ -114,8 +125,9 @@ Dependencies:
   * diff-lcs
 
 # TODO  Package Manager Agnostic:
-    sudo gem
+    sudo gem install
     sudo rip
+    sudo gem bundler
 
 # TODO  Load Path Manager Agnostic:
 
@@ -143,21 +155,37 @@ up a separate account for use with Sumo.  It does not prompt for confirmation
 when terminating an instance or differentiate between instances started by it
 vs. instances started by other tools.
 
-=== Anti-features
+=== Eatures[*]
 
-Sumo is not a cloud management tool, a monitor tool, or anything more than a
-way to get an instance up right quick.  If you're looking for a way to manage
-a cluster of production instances, try one of these fine tools.
+* An eature is a feature with an f-off ;)
+
+Sumo is not a cloud management tool, a cluster management tool, a monitor tool,
+or anything more than a way to get an instance up right quick.
+If you're looking for a way to manage a cluster of production instances, try
+one of these fine services and tools.
 
 Cloud Management Service Providers
+* Engine Yard Cloud
 * RightScale
 * Ylastic
-* Engine Yard Cloud
 
 Cloud Management Libraries
 * Cloudkick
 * Fog
 * Pool Party
+
+== Note on Patches/Pull Requests
+
+* Fork the project on Github:
+    git clone git://github.com/adamwiggins/sumo.git
+* Make your feature addition or bug fix.
+* Add tests for it. This is important.  Feature tests/specs help alert
+  us if we break the expected behavior in a future version.  Buggy behavior
+  tests/specs help guard against the same buggy behavior being reintroduced.
+* Commit, do not mess with the rakefile, version, or history.
+  (if you want to have your own version, that is fine but bump version
+  in a commit by itself I can ignore when I pull)
+* Send in a pull request with your commits. Bonus points for topic branches.
 
 == Examples
 === Role installation with Chef
