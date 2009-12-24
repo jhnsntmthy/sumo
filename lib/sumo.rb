@@ -1,8 +1,70 @@
-require 'AWS'
-require 'yaml'
-require 'socket'
+module Sumo
 
-class Sumo
+  # Accomodate different load path managers and no load path manager
+  def self.custom_require(gem)
+    begin
+      require gem
+    rescue LoadError
+      # TODO require 'vendor/rip' # fallback to Rip
+      # TODO require 'vendor/gems/environment.rb' # fallback to Bundler
+      # TODO Set Bundler's disable_system_gems 
+      private_require(File.expand_path(File.dirname(__FILE__)), gem)
+    end
+  end
+
+  module_function
+  
+  def private_require(dir, gem)
+    check_load_path(dir, gem)
+    final_require(gem)
+  end
+
+  def check_load_path(dir, gem)
+    exit_msg = "Sumo requires the #{gem} gem be installed correctly."
+    if $LOAD_PATH.include?(dir)
+      raise SystemExit.new(exit_msg)
+    else
+      $LOAD_PATH.unshift(dir)
+    end    
+  end
+  
+  def final_require(gem)
+    exit_msg  = "Sumo requires the #{gem} gem be installed correctly."
+    begin
+      require(gem)
+    rescue LoadError
+      raise SystemExit.new(exit_msg)
+    end
+  end
+
+end
+
+# Require third party gem files
+%w[thor AWS yaml socket json logger net/ssh].each do |gemi|
+  ::Sumo.custom_require gemi
+end
+
+# Require Sumo's library files
+#%w[config instance].each do |gemi|
+#  Sumo.tolerant_require("sumo/#{gemi}")
+#end
+
+# Require Sumo's test stack
+if $SUMO_TEST_STACK
+  %w[fileutils stringio spec rr diff/lcs].each do |gemi|
+    Sumo.custom_require(gemi)
+  end
+end
+
+#TODO Add spec_task, package_task, install_task
+#
+#spec_task(Dir["spec/**/*_spec.rb"])
+#
+#to any of your Thor classes. You can also customize it like so:spec_task(Dir["spec/**/*_spec.rb"], :name => “rcov”, :rcov => {:exclude => %w(spec /Library /Users task.thor lib/getopt.rb)})
+#
+#You can also add package/install tasks via: package_task / install_task (where install_task adds package_task by default).
+
+module Sumo
 	def launch
 		ami = config['ami']
 		raise "No AMI selected" unless ami
@@ -11,11 +73,13 @@ class Sumo
 
 		create_security_group
 		open_firewall(22)
+		enable_ping
 
 		result = ec2.run_instances(
 			:image_id => ami,
 			:instance_type => config['instance_size'] || 'm1.small',
-			:key_name => 'sumo',
+			:key_name => keypair_name,
+#			:group_id => [ 'sumo' ],
 			:availability_zone => config['availability_zone']
 		)
 		result.instancesSet.item[0].instanceId
@@ -158,38 +222,98 @@ class Sumo
 		end
 	end
 
+	def sync_files(hostname)
+		if config['tarball']
+			# Safety check perms on /root or you'll be locked out
+			`(cat #{config['tarball']} | #{ssh_command(hostname)} 'cd / && tar xz && chown -R root:root /root' )`
+		end
+	end
+
 	def bootstrap_chef(hostname)
+	  rubygems = "rubygems-1.3.5"
+	  rubygems_url = "http://files.rubyforge.vm.bytemark.co.uk/rubygems/#{rubygems}.tgz"
 		commands = [
-			'apt-get update',
-			'apt-get autoremove -y',
-			'apt-get install -y ruby ruby-dev rubygems git-core',
-			'gem sources -a http://gems.opscode.com',
-			'gem install chef ohai --no-rdoc --no-ri',
-			"git clone #{config['cookbooks_url']}",
+			"apt-get update",
+			"apt-get autoremove -y",
+			"apt-get install -y ruby ruby1.8-dev libopenssl-ruby1.8 rdoc build-essential wget git-core",
+			"wget -P/tmp #{rubygems_url}",
+			"cd /tmp",
+			"tar xzf #{rubygems}.tgz -v",
+			"cd #{rubygems}",
+			"/usr/bin/env ruby setup.rb",
+			"ln -sfv /usr/bin/gem1.8 /usr/bin/gem",
+			"gem sources -a http://gems.opscode.com",
+			'gem install chef ohai rake --no-rdoc --no-ri',
+      # Install thor, then execute:
+			"cd ~",
+      # thor install http://fqdn/sumo/bootstrap.thor
+			"rm -rf #{cookbooks_path}",
+			"cd ~",
+			"git clone #{config['cookbooks_url']} #{cookbooks_path}",
 		]
+		if config['private_chef_repo']
+		  commands.unshift("echo -e \"Host github.com\n\tStrictHostKeyChecking no\n\" >> ~/.ssh/config") 
+		end
+
+    if config['enable_submodules'] 
+		  commands << [
+		    "cd chef-cookbooks",
+		    "git submodule init",
+		    "git submodule update"		    
+		  ]
+		end
+		
 		ssh(hostname, commands)
 	end
 
 	def setup_role(hostname, role)
 		commands = [
-			"cd #{cookbook_repo_dir}",
-			"/var/lib/gems/1.8/bin/chef-solo -c config.json -j roles/#{role}.json"
+			"cd #{cookbooks_path}",
+			"rake roles",
+			"chef-solo -c config/solo.rb -j roles/#{role}.json"
 		]
 		ssh(hostname, commands)
 	end
 	
-	def cookbook_repo_dir
-	  config['cookbooks_url'].split("/").last.split(".").first
-  end
-
 	def ssh(hostname, cmds)
-		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
-			pipe.puts cmds.join(' && ')
+		copy_key(hostname)
+	        private_options = "-A" if config['private_chef_repo']
+		IO.popen("ssh #{private_options} -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
+			pipe.puts prepare_commands(cmds)
+		# TODO port private ssh options to ssh_command method then refactor.
+		#IO.popen("#{ssh_command(hostname)} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
 		end
+
 		unless $?.success?
 			abort "failed\nCheck ~/.sumo/ssh.log for the output"
 		end
 	end
+
+	def prepare_commands(cmds)
+	  joined_commands = cmds.join(' && ')
+	  ssh_log.debug { "Executing ssh commands: "}
+	  ssh_log.debug { joined_commands }
+	  joined_commands
+  end
+  
+  def ssh_log
+    @ssh_log ||= Logger.new("#{sumo_dir}/ssh.log")
+  end
+
+	def copy_key(hostname)
+		IO.popen("scp -i #{keypair_file} #{keypair_file} #{config['user']}@#{hostname}:~/.ssh")
+	end
+
+	def prepare_commands(cmds)
+	  joined_commands = cmds.join(' && ')
+	  ssh_log.debug { "Executing ssh commands: "}
+	  ssh_log.debug { joined_commands }
+	  joined_commands
+  end
+  
+  def ssh_log
+    @ssh_log ||= Logger.new("#{sumo_dir}/ssh.log")
+  end
 
 	def resources(hostname)
 		@resources ||= {}
@@ -197,7 +321,7 @@ class Sumo
 	end
 
 	def fetch_resources(hostname)
-		cmd = "ssh -i #{keypair_file} #{config['user']}@#{hostname} 'cat /root/resources' 2>&1"
+		cmd = "#{ssh_command(hostname)} 'cat /root/resources' 2>&1"
 		out = IO.popen(cmd, 'r') { |pipe| pipe.read }
 		abort "failed to read resources, output:\n#{out}" unless $?.success?
 		parse_resources(out, hostname)
@@ -233,25 +357,48 @@ class Sumo
 		"#{ENV['HOME']}/.sumo"
 	end
 
+	def cookbooks_path
+		config['cookbooks_path'] || 'chef-cookbooks'
+	end
+
+	def keypair_name
+		config['keypair_name'] || 'sumo'
+	end
+
+	def ssh_command(hostname)
+		"ssh -i #{keypair_file} #{config['user']}@#{hostname}"
+	end
+
 	def read_config
 		YAML.load File.read("#{sumo_dir}/config.yml")
 	rescue Errno::ENOENT
 		raise "Sumo is not configured, please fill in ~/.sumo/config.yml"
 	end
+	
+	def current_region
+	  @current_region ||= begin
+  	  zones = ec2.describe_availability_zones
+  	  zones.availabilityZoneInfo.item[0].regionName
+	  end
+  end
 
 	def keypair_file
-		"#{sumo_dir}/keypair.pem"
+	  "#{sumo_dir}/keypair-#{current_region}.pem"
 	end
 
+  def key_name
+    "sumo-#{current_region}"
+  end
+
 	def create_keypair
-		keypair = ec2.create_keypair(:key_name => "sumo").keyMaterial
+		keypair = ec2.create_keypair(:key_name => keyname_name).keyMaterial
 		File.open(keypair_file, 'w') { |f| f.write keypair }
 		File.chmod 0600, keypair_file
 	end
 
 	def create_security_group
 		ec2.create_security_group(:group_name => 'sumo', :group_description => 'Sumo')
-	rescue AWS::InvalidGroupDuplicate
+	rescue AWS::EC2::InvalidGroupDuplicate
 	end
 
 	def open_firewall(port)
@@ -262,20 +409,42 @@ class Sumo
 			:to_port => port,
 			:cidr_ip => '0.0.0.0/0'
 		)
+	rescue AWS::EC2::InvalidPermissionDuplicate
+	end
+	
+	def enable_ping
+		ec2.authorize_security_group_ingress(
+			:group_name => 'sumo',
+			:ip_protocol => 'icmp',
+			:from_port => -1,
+			:to_port => -1,
+			:cidr_ip => '0.0.0.0/0'	  
+		)
+	rescue AWS::InvalidPermissionDuplicate
+	end
+	
+	def enable_ping
+		ec2.authorize_security_group_ingress(
+			:group_name => 'sumo',
+			:ip_protocol => 'icmp',
+			:from_port => -1,
+			:to_port => -1,
+			:cidr_ip => '0.0.0.0/0'	  
+		)
 	rescue AWS::InvalidPermissionDuplicate
 	end
 
 	def ec2
-    @ec2 ||= AWS::EC2::Base.new(
-      :access_key_id => config['access_id'], 
-      :secret_access_key => config['access_secret'], 
-      :server => server
-    )
+		@ec2 ||= AWS::EC2::Base.new(
+			:access_key_id => config['access_key_id'],
+			:secret_access_key => config['secret_access_key'],
+			:server => server
+		)
 	end
 	
 	def server
-	  zone = config['availability_zone']
-	  host = zone.slice(0, zone.length - 1)
-	  "#{host}.ec2.amazonaws.com"
-  end
+		zone = config['availability_zone']
+		host = zone.slice(0, zone.length - 1)
+		"#{host}.ec2.amazonaws.com"
+	end
 end
