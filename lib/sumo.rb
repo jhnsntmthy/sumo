@@ -173,11 +173,15 @@ class Sumo
 
 	def setup_role(hostname, role)
 		commands = [
-			"cd chef-cookbooks",
+			"cd #{cookbook_repo_dir}",
 			"/var/lib/gems/1.8/bin/chef-solo -c config.json -j roles/#{role}.json"
 		]
 		ssh(hostname, commands)
 	end
+	
+	def cookbook_repo_dir
+	  config['cookbooks_url'].split("/").last.split(".").first
+  end
 
 	def ssh(hostname, cmds)
 		IO.popen("ssh -i #{keypair_file} #{config['user']}@#{hostname} > ~/.sumo/ssh.log 2>&1", "w") do |pipe|
